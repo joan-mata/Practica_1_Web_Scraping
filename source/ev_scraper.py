@@ -17,7 +17,7 @@ class EVDatabaseScraper:
         self.data = []
 
         chrome_options = Options()
-        chrome_options.add_argument("--headless")  # comenta aquesta línia per veure el navegador
+        chrome_options.add_argument("--headless")  # Comentar la línia per veure el navegador en directe 
         chrome_options.add_argument("--no-sandbox")
         chrome_options.add_argument("--disable-dev-shm-usage")
         chrome_options.add_argument("--window-size=1920,1080")
@@ -30,9 +30,11 @@ class EVDatabaseScraper:
 
 
     def __accept_banner(self):
-    #https://stackoverflow.com/questions/73093929/selenium-consent-to-cookie-pop-up
-        try:
+    # https://stackoverflow.com/questions/73093929/selenium-consent-to-cookie-pop-up
 
+    # Espera que aparegui el banner per acceptar les condicions
+        try:
+        
             WebDriverWait(self.driver, 20).until(EC.element_to_be_clickable((By.CSS_SELECTOR,
                 "div.fc-consent-root button[aria-label='Consent'] p.fc-button-label"))).click()
 
@@ -42,7 +44,7 @@ class EVDatabaseScraper:
             return
 
     def __set_items_per_page(self):
-
+    # Seleccionem mostrar 50 cotxes per pàgina per minimitzar les pàgines a recórrer
         try:
             WebDriverWait(self.driver, 10).until(
                 EC.element_to_be_clickable((By.CSS_SELECTOR, "div[data-type='items-per-page-dd']"))
@@ -60,7 +62,7 @@ class EVDatabaseScraper:
             time.sleep(2)  
 
         except Exception as e:
-            print(f"⚠️ No s'ha pogut seleccionar '50 per page': {e}")
+            print(f"No s'ha pogut seleccionar '50 per page': {e}")
 
     def __download_html(self, url: str):
 
@@ -74,12 +76,11 @@ class EVDatabaseScraper:
         links_set = set()
         page_count = 0
 
-        #self.driver.find_element(By.CSS_SELECTOR, "button[data-type='next']").click()
-
         while True:
             soup = BeautifulSoup(html, "html.parser")
             anchors = soup.findAll('a', href=True)
 
+            # Busquem els diferents links de cada cotxe
             for a in anchors:
                 href = a.get("href")
                 if href and "/car/" in href:
@@ -89,20 +90,20 @@ class EVDatabaseScraper:
                 next_button = self.driver.find_element(By.CSS_SELECTOR, "button[data-type='next']")
                 # Si està desactivat (classe jplist-disabled), sortim
                 if "jplist-disabled" in next_button.get_attribute("class"):
-                    print("✅ Última pàgina trobada.")
+                    print("Última pàgina trobada.")
                     break
 
                 self.driver.execute_script("window.scrollTo(0, document.body.scrollHeight/2);")
                 # Si no està desactivat, fem clic per anar a la següent
                 next_button.click()
-                time.sleep(2)  # espera que carregui la següent pàgina
+                time.sleep(2)
 
-                # ✅ Actualitzem el HTML per analitzar la nova pàgina
+                # Actualitzem el HTML per analitzar la nova pàgina
                 html = self.driver.page_source
 
             except Exception:
                 # Si el botó no existeix o falla, parem
-                print("⚠️ No s'ha pogut trobar o clicar el botó 'next'. Finalitzant la cerca.")
+                print("No s'ha pogut trobar el botó 'Next page'")
                 break
 
             page_count += 1
@@ -114,8 +115,9 @@ class EVDatabaseScraper:
         return links
 
     def __scrape_vehicle_data(self, html: str) -> None:
+        
         if "Request blocked" in html or "anomalies detected" in html:
-            print("⚠️ Pàgina bloquejada detectada, s'omet.")
+            print("Pàgina bloquejada detectada, s'omet.")
             return
 
         soup = BeautifulSoup(html, "html.parser")
@@ -155,7 +157,7 @@ class EVDatabaseScraper:
             self.data.append(example_data)
             return
 
-        # Iterem pels blocs data-table (cada bloc té un <h2> i una <table>)
+        # Iterem pels blocs data-table i inline-block (cada bloc té un <h2> i una <table>)
         data_tables = main_data_section.select("div.data-table, div.inline-block")
         for block in data_tables:
             h2 = block.find("h2")
@@ -238,7 +240,7 @@ class EVDatabaseScraper:
                         if "Charge Speed" in label:
                             value = val
                             break
-                    if value:  # si ja l’hem trobat, no cal seguir amb altres taules
+                    if value:
                         break
 
             # --- SECCIÓ PERFORMANCE ---
@@ -251,7 +253,6 @@ class EVDatabaseScraper:
 
                 tables = block.find_all("table")
 
-                # Inicialitzem els valors buits
                 acceleration_val = ""
                 top_speed_val = ""
                 total_power_val = ""
@@ -291,7 +292,7 @@ class EVDatabaseScraper:
                         if re.search(r"^Vehicle Consumption\s*\*?", label):
                             value = val
                             break
-                    if value:  # si ja l’hem trobat, no cal seguir amb altres taules
+                    if value:
                         break
 
             # --- SECCIÓ DIMENSIONS AND WEIGHT ---
@@ -348,7 +349,7 @@ class EVDatabaseScraper:
                         if "Seats" in label:
                             value = val
                             break
-                    if value:  # si ja l’hem trobat, no cal seguir amb altres taules
+                    if value:
                         break
 
 
@@ -372,41 +373,33 @@ class EVDatabaseScraper:
 
     def scrape(self, limit=None):
 
-        print("🔍 Iniciant el web scraping d'EV Database...\n")
+        print("Iniciant el web scraping d'EV Database\n")
         start_html = self.__download_html(self.base_url)
         self.__accept_banner()
         time.sleep(3)
         self.__set_items_per_page()
         time.sleep(3)
         updated_html = self.driver.page_source
-        vehicle_links = self.__get_vehicle_links(updated_html, limit_pages=1)
+        vehicle_links = self.__get_vehicle_links(updated_html, limit_pages=25)
 
 
         for i, link in enumerate(vehicle_links):
             if limit is not None and i >= limit:
-                print(f"✅ Límit de vehicles assolit ({limit})")
+                print(f"Límit de vehicles assolit ({limit})")
                 break
 
             html = self.__download_html(link)
             self.__scrape_vehicle_data(html)
-            # Espera aleatòria per no saturar el servidor
             time.sleep(random.uniform(1.5, 3))
 
-
-        for link in vehicle_links:
-            html = self.__download_html(link)
-            self.__scrape_vehicle_data(html)
-            # Espera aleatòria per no saturar el servidor
-            time.sleep(random.uniform(1.5, 3))
-
-        # Tancar el navegador quan acabi
+        # Tanquem el navegador quan acabi
         self.driver.quit()
-        print("✅ Procés completat. Navegador tancat.")
+        print("Procés completat. Navegador tancat.")
 
     def data2csv(self, filename: str):
-        """Exporta la llista de diccionaris a CSV."""
+        # Exportem la llista de cotxes a un csv
         if not self.data:
-            print("⚠️ No hi ha dades per exportar.")
+            print("No hi ha dades per exportar.")
             return
         with open(filename, "w", encoding="utf-8") as file:
             for i in range(len(self.data)):
@@ -416,4 +409,4 @@ class EVDatabaseScraper:
                 # Passa a la línia següent després de cada fila
                 file.write("\n")
 
-        print(f"💾 Dataset desat correctament a: {filename}")
+        print(f"Dataset desat correctament a: {filename}")
