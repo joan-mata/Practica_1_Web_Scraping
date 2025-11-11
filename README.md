@@ -55,7 +55,7 @@ S’ha revisat el fitxer robots.txt del lloc web i s’han limitat les peticions
 
 
 ## Autoria
-	•	Ari Pidevall
+	•	Ari Pidevall i Burgalés
 	•	Joan Mata Pàrraga
 
 Universitat Oberta de Catalunya (UOC)
@@ -68,3 +68,4 @@ Màster en Ciència de Dades · Curs 2025-1
 El codi font s’ha publicat sota MIT License.
 
 El dataset (ev_dataset.csv) es distribueix sota Creative Commons BY-SA 4.0.
+
