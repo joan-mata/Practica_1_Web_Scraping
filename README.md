@@ -44,7 +44,7 @@ El dataset final conté, entre altres, les variables següents:
 Brand, Model, Price, Availability, Battery, Range, Power, Speed, Consumption, Dimensions, Seats
 
 El fitxer s’ha publicat a Zenodo sota llicència CC BY-SA 4.0.
-DOI: [afegir DOI quan estigui publicat]
+DOI: https://doi.org/10.5281/zenodo.17575547
 
 
 ## Aspectes legals
@@ -66,4 +66,5 @@ Màster en Ciència de Dades · Curs 2025-1
 ## Llicència
 
 El codi font s’ha publicat sota MIT License.
+
 El dataset (ev_dataset.csv) es distribueix sota Creative Commons BY-SA 4.0.
